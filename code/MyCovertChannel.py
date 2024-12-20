@@ -1,6 +1,12 @@
 from CovertChannelBase import CovertChannelBase
+from scapy.all import IP, ICMP, sniff
 
 class MyCovertChannel(CovertChannelBase):
+    count = 0
+    flag = False
+    received_bits: list= []
+    decoded_message: list = []
+
     """
     - You are not allowed to change the file name and class name.
     - You can edit the class in any way you want (e.g. adding helper functions); however, there must be a "send" and a "receive" function, 
@@ -11,18 +17,57 @@ class MyCovertChannel(CovertChannelBase):
         - You can edit __init__.
         """
         pass
-    def send(self, log_file_name, parameter1, parameter2):
+    def send(self, log_file_name, message_len, bit_len):
         """
-        - In this function, you expected to create a random message (using function/s in CovertChannelBase), and send it to the receiver container. 
-        Entire sending operations should be handled in this function.
-        - After the implementation, please rewrite this comment part to explain your code basically.
-        """
-        binary_message = self.generate_random_binary_message_with_logging(log_file_name)
+        Creates a random binary message with logging. Slices the binary message into chunks. Creates IP layer with
+        destination address of receiver (included in docker-compose.yaml file). Also creates an ICMP layer with 
+        current chunk as a sequence number, than attaches the ICMP layer into IP layer. Later on, sends the packet using
+        CovertChannelBase send function.
         
-    def receive(self, parameter1, parameter2, parameter3, log_file_name):
+        Doesn't encode the binary message yet.
         """
-        - In this function, you are expected to receive and decode the transferred message. Because there are many types of covert channels, 
-        the receiver implementation depends on the chosen covert channel type, and you may not need to use the functions in CovertChannelBase.
-        - After the implementation, please rewrite this comment part to explain your code basically.
+        binary_message = self.generate_random_binary_message_with_logging(log_file_name, message_len, message_len)
+        binary_message += '00101110'
+        print(binary_message)
+        for i in range(0, len(binary_message), bit_len):
+            chunk = binary_message[i:i + bit_len]
+            seq_number = int(chunk, 2)
+            packet = IP(dst="172.18.0.3") / ICMP(seq = seq_number)
+            CovertChannelBase.send(self, packet)
+
+            
+        
+    def process_packet(self, packet):
+        if packet.haslayer(ICMP):
+            self.count += 1
+            seq_number: int = packet[ICMP].seq
+            self.received_bits.append(str(seq_number))
+            ascii_of_byte = ' '
+            if not (self.count % 8): 
+                string_of_byte = ''.join(self.received_bits[self.count-7:self.count])
+                int_of_byte = int(string_of_byte,2)
+                ascii_of_byte = chr(int_of_byte)
+                self.decoded_message.append(ascii_of_byte)
+            if ascii_of_byte == '.': self.flag = True
+            
+    def check_end(self, packet):
+        return self.flag
+    
+    def receive(self, log_file_name, bit_length):
         """
-        self.log_message("", log_file_name)
+        Sniffs packets and processes them chunk by chunk via using process_packet() function. Adds the sequence number
+        field contents into received_bits array. Creates the decoded message by joining the received bits together.
+        
+        No encoding/decoding
+        """
+        
+        self.count = 0
+
+        sniff(
+            filter="icmp and icmp[icmptype] != icmp-echoreply", 
+            prn=self.process_packet,
+            stop_filter=self.check_end)
+            
+        self.decoded_message = ''.join(self.decoded_message)
+        self.log_message(self.decoded_message, log_file_name)
+        
