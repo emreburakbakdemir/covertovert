@@ -14,9 +14,12 @@ class MyCovertChannel(CovertChannelBase):
         pass
     def send(self, log_file_name, message_len, bit_len):
         """
-        - In this function, you expected to create a random message (using function/s in CovertChannelBase), and send it to the receiver container. 
-        Entire sending operations should be handled in this function.
-        - After the implementation, please rewrite this comment part to explain your code basically.
+        Creates a random binary message with logging. Slices the binary message into chunks. Creates IP layer with
+        destination address of receiver (included in docker-compose.yaml file). Also creates an ICMP layer with 
+        current chunk as a sequence number, than attaches the ICMP layer into IP layer. Later on, sends the packet using
+        CovertChannelBase send function.
+        
+        Doesn't encode the binary message yet.
         """
         
         binary_message = self.generate_random_binary_message_with_logging(log_file_name, message_len, message_len)
@@ -31,9 +34,10 @@ class MyCovertChannel(CovertChannelBase):
         
     def receive(self, log_file_name, bit_length):
         """
-        - In this function, you are expected to receive and decode the transferred message. Because there are many types of covert channels, 
-        the receiver implementation depends on the chosen covert channel type, and you may not need to use the functions in CovertChannelBase.
-        - After the implementation, please rewrite this comment part to explain your code basically.
+        Sniffs packets and processes them chunk by chunk via using process_packet() function. Adds the sequence number
+        field contents into received_bits array. Creates the decoded message by joining the received bits together.
+        
+        No encoding/decoding
         """
         received_bits = []
            
