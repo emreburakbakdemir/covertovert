@@ -3,13 +3,13 @@
   "send": {
     "parameters": {
       "message_len": 128,
-      "bit_len": 8,
+      "bit_len": 1,
       "log_file_name": "ICMPSequenceNumberChannelSender.log"
     }
   },
   "receive": {
     "parameters": {
-      "bit_length": 8,
+      "bit_length": 1,
       "log_file_name": "ICMPSequenceNumberChannelReceiver.log"
     }
   }
