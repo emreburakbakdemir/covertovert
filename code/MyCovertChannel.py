@@ -1,10 +1,11 @@
+from random import randrange
 from CovertChannelBase import CovertChannelBase
 from scapy.all import IP, ICMP, sniff
 
 class MyCovertChannel(CovertChannelBase):
     count = 0
     flag = False
-    received_bits: list= []
+    received_bits: str = ''
     decoded_message: list = []
 
     """
@@ -31,17 +32,26 @@ class MyCovertChannel(CovertChannelBase):
         print(binary_message)
         for i in range(0, len(binary_message), bit_len):
             chunk = binary_message[i:i + bit_len]
-            seq_number = int(chunk, 2)
+            seq_number = self.encoder(chunk, bit_len)
             packet = IP(dst="172.18.0.3") / ICMP(seq = seq_number)
             CovertChannelBase.send(self, packet)
 
-            
+    def encoder(self,chunk,bit_len):
+        val = int(chunk,2)
+        seq = randrange(2**7,2**14,2 ** bit_len)
+        seq += val
+        return seq
+    
+    def decoder(self, seq, bit_len):
+        chunk = seq % 2 ** bit_len
+        bin_chunk = bin(chunk)[2:].zfill(bit_len)
+        return bin_chunk
         
-    def process_packet(self, packet):
+    def process_packet(self, packet, bit_len):
         if packet.haslayer(ICMP):
-            self.count += 1
+            self.count += bit_len
             seq_number: int = packet[ICMP].seq
-            self.received_bits.append(str(seq_number))
+            self.received_bits += self.decoder(seq_number, bit_len)
             ascii_of_byte = ' '
             if not (self.count % 8): 
                 string_of_byte = ''.join(self.received_bits[self.count-7:self.count])
@@ -65,7 +75,7 @@ class MyCovertChannel(CovertChannelBase):
 
         sniff(
             filter="icmp and icmp[icmptype] != icmp-echoreply", 
-            prn=self.process_packet,
+            prn=lambda pkt: self.process_packet(pkt, bit_length),
             stop_filter=self.check_end)
             
         self.decoded_message = ''.join(self.decoded_message)
