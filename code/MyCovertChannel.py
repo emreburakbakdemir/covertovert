@@ -30,7 +30,7 @@ class MyCovertChannel(CovertChannelBase):
         Doesn't encode the binary message yet.
         """
         
-        start_time = time.time()
+        # start_time = time.time()
         
         binary_message = self.generate_random_binary_message_with_logging(log_file_name, message_len, message_len)
         binary_message += '00101110'
@@ -40,11 +40,11 @@ class MyCovertChannel(CovertChannelBase):
             packet = IP(dst="172.18.0.3") / ICMP(seq = seq_number) 
             CovertChannelBase.send(self, packet)
             
-        end_time = time.time()
-        transmission_time = end_time - start_time
-        bps = (message_len*8) / transmission_time
-        print("bit length: ", bit_len)
-        print("transmission time: ", transmission_time, "\n", "transmission rate (bps): ", bps)
+        # end_time = time.time()
+        # transmission_time = end_time - start_time
+        # bps = (message_len*8) / transmission_time
+        # print("bit length: ", bit_len)
+        # print("transmission time: ", transmission_time, "\n", "transmission rate (bps): ", bps)
 
     def encoder(self,chunk,bit_len):
         val = int(chunk,2)
@@ -65,15 +65,14 @@ class MyCovertChannel(CovertChannelBase):
             ascii_of_byte = ' '
             if not (self.count % 8): 
                 string_of_byte = ''.join(self.received_bits[self.count-7:self.count])
-                int_of_byte = int(string_of_byte,2)
-                ascii_of_byte = chr(int_of_byte)
+                ascii_of_byte = self.convert_eight_bits_to_character(string_of_byte)
                 self.decoded_message.append(ascii_of_byte)
             if ascii_of_byte == '.': self.flag = True
             
     def check_end(self, packet):
         return self.flag
     
-    def receive(self, log_file_name, bit_length, message_len):
+    def receive(self, log_file_name, bit_length):
         """
         Sniffs packets and processes them chunk by chunk via using process_packet() function. Adds the sequence number
         field contents into received_bits array. Creates the decoded message by joining the received bits together.
@@ -82,19 +81,12 @@ class MyCovertChannel(CovertChannelBase):
         """
         
         self.count = 0
-        
-        # start_time = time.time()
 
         sniff(
             filter="icmp and icmp[icmptype] != icmp-echoreply", 
             prn=lambda pkt: self.process_packet(pkt, bit_length),
             stop_filter=self.check_end)
-        
-        # end_time = time.time()
-        # transmission_time = end_time - start_time
-        # bps = (message_len*8) / transmission_time
-        
-        # print("transmission time: ", transmission_time, "\n", "transmission rate (bps): ", bps)
+
             
         self.decoded_message = ''.join(self.decoded_message)
         self.log_message(self.decoded_message, log_file_name)
