@@ -1,12 +1,14 @@
 from random import randrange
 from CovertChannelBase import CovertChannelBase
 from scapy.all import IP, ICMP, sniff
+import time
 
 class MyCovertChannel(CovertChannelBase):
     count = 0
     flag = False
     received_bits: str = ''
     decoded_message: list = []
+    
 
     """
     - You are not allowed to change the file name and class name.
@@ -27,14 +29,22 @@ class MyCovertChannel(CovertChannelBase):
         
         Doesn't encode the binary message yet.
         """
+        
+        start_time = time.time()
+        
         binary_message = self.generate_random_binary_message_with_logging(log_file_name, message_len, message_len)
         binary_message += '00101110'
-        print(binary_message)
         for i in range(0, len(binary_message), bit_len):
             chunk = binary_message[i:i + bit_len]
             seq_number = self.encoder(chunk, bit_len)
-            packet = IP(dst="172.18.0.3") / ICMP(seq = seq_number)
+            packet = IP(dst="172.18.0.3") / ICMP(seq = seq_number) 
             CovertChannelBase.send(self, packet)
+            
+        end_time = time.time()
+        transmission_time = end_time - start_time
+        bps = (message_len*8) / transmission_time
+        print("bit length: ", bit_len)
+        print("transmission time: ", transmission_time, "\n", "transmission rate (bps): ", bps)
 
     def encoder(self,chunk,bit_len):
         val = int(chunk,2)
@@ -63,7 +73,7 @@ class MyCovertChannel(CovertChannelBase):
     def check_end(self, packet):
         return self.flag
     
-    def receive(self, log_file_name, bit_length):
+    def receive(self, log_file_name, bit_length, message_len):
         """
         Sniffs packets and processes them chunk by chunk via using process_packet() function. Adds the sequence number
         field contents into received_bits array. Creates the decoded message by joining the received bits together.
@@ -72,11 +82,19 @@ class MyCovertChannel(CovertChannelBase):
         """
         
         self.count = 0
+        
+        # start_time = time.time()
 
         sniff(
             filter="icmp and icmp[icmptype] != icmp-echoreply", 
             prn=lambda pkt: self.process_packet(pkt, bit_length),
             stop_filter=self.check_end)
+        
+        # end_time = time.time()
+        # transmission_time = end_time - start_time
+        # bps = (message_len*8) / transmission_time
+        
+        # print("transmission time: ", transmission_time, "\n", "transmission rate (bps): ", bps)
             
         self.decoded_message = ''.join(self.decoded_message)
         self.log_message(self.decoded_message, log_file_name)
