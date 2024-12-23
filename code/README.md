@@ -41,9 +41,28 @@ There are two main functions in MyCovertChannel class: send and receive. Communi
 
 ## Helper Functions
 1. **encoder(self,chunk,bit_len)**
-    Description
+
+    **Parameters**
+    - **chunk:** A string representing a binary chunk of the message to be encoded.
+    - **bit_len:** The length of the binary chunk to be encoded.
+
+    **Functionality**
+    - Converts the binary chunk (chunk) into its decimal equivalent.
+    - Generates a random base sequence number within a specified range, ensuring the value falls between $2^7$ and $2^14$, aligned with the given bit_len.
+    - Adds the decimal value of the binary chunk to the random base sequence number.
+    - Returns the resulting sequence number, which encodes the binary chunk for transmission.
+
 2. **decoder(self, seq, bit_len)**
-    Description
+
+    **Parameters**
+    - **seq:**  The sequence number extracted from the ICMP packet.
+    - **bit_len:** The length of the binary chunk being decoded.
+
+    **Functionality**
+    - Extracts the encoded portion of the sequence number using modulo $2^(bit_len)$
+    - Converts the resulting value back into its binary representation and pads it with leading zeros to ensure it matches the bit_len.
+    - Returns the binary chunk as a string, which represents the decoded data from the sequence number.
+
 3. **process_packet(self, packet, bit_len)**
 
     **Parameters**
