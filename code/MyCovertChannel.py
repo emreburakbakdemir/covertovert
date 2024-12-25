@@ -8,6 +8,7 @@ class MyCovertChannel(CovertChannelBase):
     flag = False
     received_bits: str = ''
     decoded_message: list = []
+    message_len_checker = False
 
     def __init__(self):
         pass
@@ -19,22 +20,24 @@ class MyCovertChannel(CovertChannelBase):
         CovertChannelBase send function.
         """
         
-        start_time = time.time()
-        
+        # start_time = time.time()
         binary_message = self.generate_random_binary_message_with_logging(log_file_name, message_len, message_len)
+        binary_message += '00101110'
         for i in range(0, len(binary_message), bit_len):
             chunk = binary_message[i:i + bit_len]
             seq_number = self.encoder(chunk, bit_len, key)
             packet = IP(dst="172.18.0.3") / ICMP(seq = seq_number) 
             CovertChannelBase.send(self, packet)
             
-        end_time = time.time()
-        transmission_time = end_time - start_time
-        bps = (message_len*8) / transmission_time
-        print("bit length: ", bit_len)
-        print("transmission time: ", transmission_time, "\n", "transmission rate (bps): ", bps)
+        # end_time = time.time()
+        # transmission_time = end_time - start_time
+        # bps = (message_len*8) / transmission_time
+        # print("message length: ", message_len)
+        # print("bit length: ", bit_len)
+        # print("transmission time: ", transmission_time, "\n", "transmission rate (bps): ", bps)
 
     def encoder(self, chunk, bit_len, key):
+        
         """
         Encrypts the chunk we will send to create secure connection. Uses self-inverse XOR operation to encode information. 
         And adds a base number calculated with the bit length of the chunk to spread the information to 16-bit sequence number.
@@ -51,7 +54,7 @@ class MyCovertChannel(CovertChannelBase):
         Subtracts base number from sequence number and XOR operation gives the binary representation of the message. Python's binary number indicator 0b
         is trimmed to safely concatenate with the message created up to this point.
         """
-
+        
         base = 1 << (16-bit_len)
         encoded = seq - base
         val = encoded ^ key
@@ -70,25 +73,26 @@ class MyCovertChannel(CovertChannelBase):
                     ascii_of_byte = self.convert_eight_bits_to_character(string_of_byte)
                     self.decoded_message.append(ascii_of_byte)
                     self.count+= 1
-                    if ascii_of_byte == '.': self.flag = True
+            if ascii_of_byte == '.': self.flag = True
             
     def check_end(self, packet):
         return self.flag
     
-    def receive(self, log_file_name, bit_length, key):
+    def receive(self, log_file_name, bit_length, key, message_len):
         """
         Sniffs packets and processes them chunk by chunk via using process_packet() function. Adds the sequence number
         field contents into received_bits array. Creates the decoded message by joining the received bits together.
         """
-        
+        if (message_len % 2 != 0): self.message_len_checker = True
         self.count = 0
 
         sniff(
             filter="icmp and icmp[icmptype] != icmp-echoreply", 
             prn=lambda pkt: self.process_packet(pkt, bit_length, key),
             stop_filter=self.check_end)
-
-            
+        
+        
+        if (self.message_len_checker): self.decoded_message.pop()   
         self.decoded_message = ''.join(self.decoded_message)
         self.log_message(self.decoded_message, log_file_name)
         
