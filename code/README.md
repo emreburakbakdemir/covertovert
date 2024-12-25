@@ -91,4 +91,8 @@ There are two main functions in MyCovertChannel class: send and receive. Communi
 
 
 ## Covert Channel Capacity
-For **message_len:** 16 and **bit_len:** 2, covert channel capacity in bits per second is 35.401
+For **message_len:** 16 and **bit_len:** 1, covert channel capacity in bits per second is 12.250 bps
+For **message_len:** 16 and **bit_len:** 2, covert channel capacity in bits per second is 24.579 bps
+For **message_len:** 16 and **bit_len:** 4, covert channel capacity in bits per second is 46.097 bps
+For **message_len:** 16 and **bit_len:** 8, covert channel capacity in bits per second is 93.027 bps
+For **message_len:** 16 and **bit_len:** 16, covert channel capacity in bits per second is 184.046 bps

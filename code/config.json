@@ -2,15 +2,15 @@
   "covert_channel_code": "CSC-PSV-ICMP-SN",
   "send": {
     "parameters": {
-      "message_len": 15,
-      "bit_len": 1,
+      "message_len": 16,
+      "bit_len": 16,
       "log_file_name": "ICMPSequenceNumberChannelSender.log",
       "key": 19229
     }
   },
   "receive": {
     "parameters": {
-      "bit_length": 1,
+      "bit_length": 16,
       "log_file_name": "ICMPSequenceNumberChannelReceiver.log",
       "key":19229
     }
