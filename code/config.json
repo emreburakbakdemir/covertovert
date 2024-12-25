@@ -3,15 +3,14 @@
   "send": {
     "parameters": {
       "message_len": 15,
-      "bit_len": 16,
+      "bit_len": 1,
       "log_file_name": "ICMPSequenceNumberChannelSender.log",
       "key": 19229
     }
   },
   "receive": {
     "parameters": {
-      "message_len": 15,
-      "bit_length": 16,
+      "bit_length": 1,
       "log_file_name": "ICMPSequenceNumberChannelReceiver.log",
       "key":19229
     }

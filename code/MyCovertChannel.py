@@ -8,7 +8,6 @@ class MyCovertChannel(CovertChannelBase):
     flag = False
     received_bits: str = ''
     decoded_message: list = []
-    message_len_checker = False
 
     def __init__(self):
         pass
@@ -22,7 +21,6 @@ class MyCovertChannel(CovertChannelBase):
         
         # start_time = time.time()
         binary_message = self.generate_random_binary_message_with_logging(log_file_name, message_len, message_len)
-        binary_message += '00101110'
         for i in range(0, len(binary_message), bit_len):
             chunk = binary_message[i:i + bit_len]
             seq_number = self.encoder(chunk, bit_len, key)
@@ -64,26 +62,26 @@ class MyCovertChannel(CovertChannelBase):
         if packet.haslayer(ICMP):
             seq_number: int = packet[ICMP].seq
             self.received_bits += self.decoder(seq_number, bit_len, key)
-            ascii_of_byte = ' '
+            ascii_of_byte = ''
             len_received_bits = len(self.received_bits)
-
             if not (len_received_bits % 8):
                 while(len_received_bits/8 != self.count):
                     string_of_byte = ''.join(self.received_bits[self.count * 8: (self.count+1) * 8])
                     ascii_of_byte = self.convert_eight_bits_to_character(string_of_byte)
-                    self.decoded_message.append(ascii_of_byte)
+                    if(ascii_of_byte!='\0'): self.decoded_message.append(ascii_of_byte)
                     self.count+= 1
-            if ascii_of_byte == '.': self.flag = True
+                    if ascii_of_byte == '.': 
+                        self.flag = True
+                        break
             
     def check_end(self, packet):
         return self.flag
     
-    def receive(self, log_file_name, bit_length, key, message_len):
+    def receive(self, log_file_name, bit_length, key):
         """
         Sniffs packets and processes them chunk by chunk via using process_packet() function. Adds the sequence number
         field contents into received_bits array. Creates the decoded message by joining the received bits together.
         """
-        if (message_len % 2 != 0): self.message_len_checker = True
         self.count = 0
 
         sniff(
@@ -92,7 +90,6 @@ class MyCovertChannel(CovertChannelBase):
             stop_filter=self.check_end)
         
         
-        if (self.message_len_checker): self.decoded_message.pop()   
         self.decoded_message = ''.join(self.decoded_message)
         self.log_message(self.decoded_message, log_file_name)
         

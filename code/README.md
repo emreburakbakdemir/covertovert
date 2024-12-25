@@ -13,7 +13,7 @@ There are two main functions in MyCovertChannel class: send and receive. Communi
     - **self:** Reference to the instance of the **MyCovertChannel** class.
     - **log_file_name:** A string specifying the file name to log the sent binary message.
     - **message_len:** An integer indicating the length of the binary message to be generated.
-    - **bit_len:** An integer representing the size of each binary chunk to be encoded in ICMP packet sequence numbers. Possible Values: {2,4,8,16}
+    - **bit_len:** An integer representing the size of each binary chunk to be encoded in ICMP packet sequence numbers. Possible Values: {1,2,4,8,16}
     - **key:** A 16-bit integer masking the information for secure transmission.
 
     **Functionality**
