@@ -22,7 +22,6 @@ class MyCovertChannel(CovertChannelBase):
         start_time = time.time()
         
         binary_message = self.generate_random_binary_message_with_logging(log_file_name, message_len, message_len)
-        binary_message += '00101110'
         for i in range(0, len(binary_message), bit_len):
             chunk = binary_message[i:i + bit_len]
             seq_number = self.encoder(chunk, bit_len, key)
@@ -36,8 +35,10 @@ class MyCovertChannel(CovertChannelBase):
         print("transmission time: ", transmission_time, "\n", "transmission rate (bps): ", bps)
 
     def encoder(self, chunk, bit_len, key):
-        
-
+        """
+        Encrypts the chunk we will send to create secure connection. Uses self-inverse XOR operation to encode information. 
+        And adds a base number calculated with the bit length of the chunk to spread the information to 16-bit sequence number.
+        """        
         val = int(chunk, 2)
         base = 1 << (16-bit_len)
         encoded = val ^ key
@@ -45,6 +46,12 @@ class MyCovertChannel(CovertChannelBase):
         return seq 
 
     def decoder(self, seq, bit_len, key):
+        """
+        Decrypts the sequence number arrived into the message. Applies operations from encoder in reverse order to extract information.
+        Subtracts base number from sequence number and XOR operation gives the binary representation of the message. Python's binary number indicator 0b
+        is trimmed to safely concatenate with the message created up to this point.
+        """
+
         base = 1 << (16-bit_len)
         encoded = seq - base
         val = encoded ^ key
@@ -63,7 +70,7 @@ class MyCovertChannel(CovertChannelBase):
                     ascii_of_byte = self.convert_eight_bits_to_character(string_of_byte)
                     self.decoded_message.append(ascii_of_byte)
                     self.count+= 1
-            if ascii_of_byte == '.': self.flag = True
+                    if ascii_of_byte == '.': self.flag = True
             
     def check_end(self, packet):
         return self.flag
