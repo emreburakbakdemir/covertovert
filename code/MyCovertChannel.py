@@ -11,7 +11,7 @@ class MyCovertChannel(CovertChannelBase):
 
     def __init__(self):
         pass
-    def send(self, log_file_name, message_len, bit_len, key):
+    def send(self, log_file_name, message_len, bit_len, key, dest_ip):
         """
         Creates a random binary message with logging. Slices the binary message into chunks. Creates IP layer with
         destination address of receiver (included in docker-compose.yaml file). Also creates an ICMP layer with 
@@ -24,7 +24,7 @@ class MyCovertChannel(CovertChannelBase):
         for i in range(0, len(binary_message), bit_len):
             chunk = binary_message[i:i + bit_len]
             seq_number = self.encoder(chunk, bit_len, key)
-            packet = IP(dst="172.18.0.3") / ICMP(seq = seq_number) 
+            packet = IP(dst=dest_ip) / ICMP(seq = seq_number) 
             CovertChannelBase.send(self, packet)
             
         # end_time = time.time()
@@ -77,15 +77,15 @@ class MyCovertChannel(CovertChannelBase):
     def check_end(self, packet):
         return self.flag
     
-    def receive(self, log_file_name, bit_length, key):
+    def receive(self, log_file_name, bit_length, key, source_ip):
         """
         Sniffs packets and processes them chunk by chunk via using process_packet() function. Adds the sequence number
         field contents into received_bits array. Creates the decoded message by joining the received bits together.
         """
         self.count = 0
-
+        filter_string = f"icmp and icmp[icmptype] != icmp-echoreply and src host {source_ip}"
         sniff(
-            filter="icmp and icmp[icmptype] != icmp-echoreply", 
+            filter=filter_string, 
             prn=lambda pkt: self.process_packet(pkt, bit_length, key),
             stop_filter=self.check_end)
         
