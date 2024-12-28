@@ -15,11 +15,12 @@ There are two main functions in MyCovertChannel class: send and receive. Communi
     - **message_len:** An integer indicating the length of the binary message to be generated.
     - **bit_len:** An integer representing the size of each binary chunk to be encoded in ICMP packet sequence numbers. Possible Values: {1,2,4,8,16}
     - **key:** A 16-bit integer masking the information for secure transmission.
+    - **dest_ip:** IP address of the receiver.
 
     **Functionality**
     - Generates a random binary message using **generate_random_binary_message_with_logging()** function provided in CovertChannelBase.py file. The generated message is logged into the specified **log_file_name**
     - Splits the binary message into chunks which **len(chunk) = bit_len**
-    - Encodes the binary message into ICMP packet sequence number and attaches it to the IP layer which is destined to the reciever IP.
+    - Encodes the binary message into ICMP packet sequence number and attaches it to the IP layer which is destined to the **dest_ip**.
     - Than sends the packets using **CovertChannelBase.send()** function. 
 
 
@@ -30,9 +31,10 @@ There are two main functions in MyCovertChannel class: send and receive. Communi
     - **log_file_name:** A string specifying the file name to log the reconstructed binary message.
     - **bit_len:** An integer representing the size of each binary chunk encoded in ICMP packet sequence numbers.
     - **key:** A 16-bit integer reverting transmitted value into the real message.
+    - **source_ip:** IP address of the sender to check later while sniffing.
 
     **Functionality**
-    - Uses the **sniff** function from the Scapy library to capture incoming ICMP packets.
+    - Uses the **sniff** function from the Scapy library to capture incoming ICMP packets sended from the sender IP.
     - For each captured packet:
         - Extracts the sequence number from the ICMP layer.
         - Decodes the binary chunk using the custom decoding function.
